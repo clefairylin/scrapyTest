@@ -37,3 +37,19 @@ def get_number_value(value):
 
 def remove_splash(value):
     return value.replace("/", "")
+
+
+def get_string_between(source: str, start, end=None):
+    start_index = source.find(start)
+    if start_index >= 0:
+        if end is None:
+            return source[start_index:]
+        else:
+            end_index = source.find(end, start_index)
+            if end_index > 0:
+                return source[start_index + len(start):end_index]
+            else:
+                return None
+    else:
+        return None
+

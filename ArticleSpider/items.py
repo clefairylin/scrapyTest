@@ -72,7 +72,7 @@ class MyItem(scrapy.Item):
             else:
                 params.append(self[key])
 
-        insert_sql = "INSERT INTO {0}({1}) VALUES ({2}) ON DUPLICATE KEY UPDATE "\
+        insert_sql = "INSERT INTO {0}({1}) VALUES ({2})"\
             .format(self["table_name"], ", ".join(column_name), ", ".join(["%s"]*len(column_name)))
         return insert_sql, params
 
@@ -163,5 +163,23 @@ class ZhihuAnswerItem(MyItem):
     create_time = scrapy.Field()    # 创建时间
     update_time = scrapy.Field()    # 更新时间
     crawl_time = scrapy.Field()    # 爬取时间
-    crawl_update_time = scrapy.Field()     # 爬取更新时间
 
+
+class ProductKeywordItem(scrapy.Item):
+    id = scrapy.Field()
+    shop_url = scrapy.Field()
+    product_url = scrapy.Field()
+    product_url_object_id = scrapy.Field()
+    product_name = scrapy.Field()
+    keywords = scrapy.Field(
+        output_processor=Join(",")
+    )
+    update_time = scrapy.Field()    # 更新时间
+    crawl_time = scrapy.Field()    # 爬取时间
+
+    def get_insert_sql(self):
+        insert_sql = "INSERT INTO product_keyword (id, shop_url, product_url, product_url_object_id, product_name," \
+                     " keywords, crawl_time) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+        params = [self["id"], self["shop_url"], self["product_url"], self["product_url_object_id"],
+                  self["product_name"], self["keywords"], self["crawl_time"]]
+        return insert_sql, params
