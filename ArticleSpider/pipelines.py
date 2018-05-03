@@ -71,6 +71,7 @@ class MysqlTwistedPipeline(object):
     """
     def __init__(self, dbpool):
         self.dbpool = dbpool
+        self.count = 0
 
     @classmethod
     def from_settings(cls, settings):
@@ -96,8 +97,10 @@ class MysqlTwistedPipeline(object):
         print(failure)
 
     def do_insert(self, cursor, item):
+        self.count += 1
+        print(self.count)
         insert_sql, params = item.get_insert_sql()
-        cursor.execute(insert_sql, params)
+        # cursor.execute(insert_sql, params)
         return item
 
 

@@ -94,8 +94,8 @@ IMAGES_STORE = os.path.join(os.path.abspath(os.path.dirname(__file__)), "images"
 # HTTPCACHE_IGNORE_HTTP_CODES = []
 # HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-MYSQL_HOST = "192.168.1.161"
-MYSQL_DBNAME = "scrapy_spider"
+MYSQL_HOST = "193.112.63.146"
+MYSQL_DBNAME = "spider"
 MYSQL_USER = "root"
 MYSQL_PASSWORD = "root"
 

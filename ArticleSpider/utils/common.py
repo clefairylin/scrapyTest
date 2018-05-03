@@ -45,11 +45,23 @@ def get_string_between(source: str, start, end=None):
         if end is None:
             return source[start_index:]
         else:
-            end_index = source.find(end, start_index)
-            if end_index > 0:
-                return source[start_index + len(start):end_index]
+            if isinstance(end, str):
+                end_index = source.find(end, start_index)
+                if end_index > 0:
+                    return source[start_index + len(start):end_index]
+                else:
+                    return None
             else:
-                return None
+                all_end = []
+                for e in end:
+                    index = source.find(e, start_index + len(start))
+                    if index > 0:
+                        all_end.append(index)
+                if all_end:
+                    end_index = min(all_end)
+                    return source[start_index + len(start):end_index]
+                else:
+                    return None
     else:
         return None
 

@@ -174,12 +174,13 @@ class ProductKeywordItem(scrapy.Item):
     keywords = scrapy.Field(
         output_processor=Join(",")
     )
-    update_time = scrapy.Field()    # 更新时间
     crawl_time = scrapy.Field()    # 爬取时间
 
     def get_insert_sql(self):
         insert_sql = "INSERT INTO product_keyword (id, shop_url, product_url, product_url_object_id, product_name," \
-                     " keywords, crawl_time) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-        params = [self["id"], self["shop_url"], self["product_url"], self["product_url_object_id"],
+                     " keywords, crawl_time) VALUES (%s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE product_url=" \
+                     " VALUES(product_url), product_url_object_id =VALUES(product_url_object_id), product_name=" \
+                     "VALUES (product_name), keywords=VALUES(keywords), crawl_time=VALUES(crawl_time)"
+        params = [int(self["id"]), self["shop_url"], self["product_url"], self["product_url_object_id"],
                   self["product_name"], self["keywords"], self["crawl_time"]]
         return insert_sql, params
