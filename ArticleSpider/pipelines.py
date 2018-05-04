@@ -7,11 +7,11 @@
 import codecs
 import json
 
-import MySQLdb
+import pymysql
 from scrapy.pipelines.images import ImagesPipeline
 from scrapy.exporters import JsonItemExporter
 from twisted.enterprise import adbapi
-from MySQLdb import cursors
+from pymysql import cursors
 
 
 class ArticlespiderPipeline(object):
@@ -50,7 +50,7 @@ class JsonExporterPipeline(object):
 
 class MysqlPipeline(object):
     def __init__(self):
-        self.conn = MySQLdb.connect('192.168.1.160', 'root', 'root', 'scrapy_spider', charset="utf8", use_unicode=True)
+        self.conn = pymysql.connect('192.168.1.160', 'root', 'root', 'scrapy_spider', charset="utf8", use_unicode=True)
         self.cursor = self.conn.cursor()
 
     def process_item(self, item, spider):
@@ -84,7 +84,7 @@ class MysqlTwistedPipeline(object):
             cursorclass=cursors.DictCursor,
             use_unicode=True,
         )
-        dbpool = adbapi.ConnectionPool("MySQLdb", **daparams)
+        dbpool = adbapi.ConnectionPool("pymysql", **daparams)
         return cls(dbpool)
 
     def process_item(self, item, spider):
@@ -100,7 +100,7 @@ class MysqlTwistedPipeline(object):
         self.count += 1
         print(self.count)
         insert_sql, params = item.get_insert_sql()
-        # cursor.execute(insert_sql, params)
+        cursor.execute(insert_sql, params)
         return item
 
 

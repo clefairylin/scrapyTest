@@ -13,6 +13,10 @@ class ProductkeywordSpider(CrawlSpider):
     name = 'productKeyword'
     allowed_domains = ['en.alibaba.com']
     start_urls = ['https://newestmachinery.en.alibaba.com/productlist.html']
+    custom_settings = {
+        "COOKIES_ENABLED": True,
+        "DOWNLOAD_DELAY": 0.25,
+    }
 
     rules = (
         Rule(LinkExtractor(allow=r'/product/\d+-\d+/.*.html'), callback='parse_keyword'),

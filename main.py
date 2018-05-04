@@ -4,11 +4,11 @@
 # @Author: lxy
 # @Date  : 2017/11/22
 # @Desc  :
-
 import sys
 import os
 
 from scrapy.cmdline import execute
+
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # execute(['scrapy', 'crawl', 'jobbole'])
