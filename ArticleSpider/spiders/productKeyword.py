@@ -23,7 +23,7 @@ class ProductkeywordSpider(CrawlSpider):
         item_loader = TakeFirstItemLoader(item=ProductKeywordItem(), response=response)
         start = response.url.find("//")
         end = response.url.find("/", start+2)
-        item_loader.add_value("id", get_string_between(response.text, "product/", ("-", "/")))
+        item_loader.add_value("id", get_string_between(response.url, "product/", ("-", "/")))
         item_loader.add_value("shop_url", response.url[:end])
         item_loader.add_value("product_url", response.url)
         item_loader.add_value("product_url_object_id", get_md5(response.url))
@@ -38,6 +38,7 @@ class ProductkeywordSpider(CrawlSpider):
                 data = json.loads(data_json)
                 keywords = data["children"][3]["children"][1]["children"][3]["attributes"]["productKeywords"]["value"]
                 item_loader.add_value("keywords", keywords)
+        item_loader.add_css("product_group", ".ui-breadcrumb a::text")
 
         product_keyword_item = item_loader.load_item()
         yield product_keyword_item

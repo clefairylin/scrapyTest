@@ -59,6 +59,11 @@ def return_value(value):
     return value
 
 
+def filter_group(value):
+    if value not in ['Home', 'Product Categories']:
+        return value
+
+
 class MyItem(scrapy.Item):
     def get_insert_sql(self):
         column_name = []
@@ -173,6 +178,10 @@ class ProductKeywordItem(scrapy.Item):
     product_name = scrapy.Field()
     keywords = scrapy.Field(
         output_processor=Join(",")
+    )
+    product_group = scrapy.Field(
+        input_processor=MapCompose(filter_group),
+        output_processor=Join(">")
     )
     crawl_time = scrapy.Field()    # 爬取时间
 
