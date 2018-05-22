@@ -8,10 +8,15 @@ import codecs
 import json
 
 import pymysql
+from scrapy import signals
 from scrapy.pipelines.images import ImagesPipeline
 from scrapy.exporters import JsonItemExporter
 from twisted.enterprise import adbapi
 from pymysql import cursors
+from w3lib.html import remove_tags
+from scrapy.xlib.pydispatch import dispatcher
+
+from ArticleSpider.models.es_types import ArticleType
 
 
 class ArticlespiderPipeline(object):
@@ -71,7 +76,10 @@ class MysqlTwistedPipeline(object):
     """
     def __init__(self, dbpool):
         self.dbpool = dbpool
+        self.data = []
         self.count = 0
+        self.last_sql = None
+        dispatcher.connect(self.spider_closed, signals.spider_closed)
 
     @classmethod
     def from_settings(cls, settings):
@@ -91,17 +99,28 @@ class MysqlTwistedPipeline(object):
         # 使用 twisted 异步执行 mysql 插入
         query = self.dbpool.runInteraction(self.do_insert, item)
         # 处理异常
-        query.addErrback(self.handle_error, item, spider)
+        query.addErrback(self.handle_error)
 
-    def handle_error(self, failure, item, spider):
+    def spider_closed(self):
+        query = self.dbpool.runInteraction(self.insert_all)
+        query.addErrback(self.handle_error)
+
+    def handle_error(self, failure):
         print(failure)
 
     def do_insert(self, cursor, item):
         self.count += 1
-        print(self.count)
-        insert_sql, params = item.get_insert_sql()
-        cursor.execute(insert_sql, params)
+        sql, params = item.get_insert_sql()
+        self.last_sql = sql
+        self.data.append(params)
+        if self.count > 500:
+            self.count = 0
+            cursor.executemany(sql, self.data)
+            self.data.clear()
         return item
+
+    def insert_all(self, cursor):
+        cursor.executemany(self.last_sql, self.data)
 
 
 class ArticleImagePipeline(ImagesPipeline):
@@ -109,4 +128,24 @@ class ArticleImagePipeline(ImagesPipeline):
         if 'front_image_url' in item:
             for ok, value in results:
                 item['front_image_path'] = value['path']
+        return item
+
+
+class ElasticSearchPipeline(object):
+
+    def process_item(self, item, spider):
+        article = ArticleType()
+        article.title = item["title"]
+        article.url = item["url"]
+        article.front_image_path = item.get("front_image_path")
+        article.front_image_url = item["front_image_url"]
+        article.create_date = item["create_date"]
+        article.praise_nums = item["praise_nums"]
+        article.fav_nums = item["fav_nums"]
+        article.comment_nums = item["comment_nums"]
+        article.tag = item["tag"]
+        article.content = remove_tags(item["content"])
+        article.meta.id = item["url_object_id"]
+
+        article.save()
         return item

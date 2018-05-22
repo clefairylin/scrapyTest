@@ -5,17 +5,13 @@
 # See documentation in:
 # http://doc.scrapy.org/en/latest/topics/items.html
 import re
+from w3lib.html import remove_tags
 
 import scrapy
-import datetime
-
-from dateutil.parser import parse
 from scrapy.loader import ItemLoader
 from scrapy.loader.processors import MapCompose, TakeFirst, Join
 
-from ArticleSpider.settings import DATETIME_FORMAT
 from ArticleSpider.utils.common import date_convert, get_number_value, remove_splash
-from w3lib.html import remove_tags
 
 
 class TakeFirstItemLoader(ItemLoader):
@@ -23,28 +19,8 @@ class TakeFirstItemLoader(ItemLoader):
     default_output_processor = TakeFirst()
 
 
-def handle_lagou_job_address(value):
-    address_list = value.split("\n")
-    address_list = [v.strip() for v in address_list if v.strip() != '查看地图']
-    return "".join(address_list)
-
-
-def get_lagou_publish_date(value):
-    date_match = re.match("(\d{2}:\d{2})\s+发布于.*", value)
-    if date_match:
-        date = str(datetime.date.today()) + " " + date_match.group(1)
-        return parse(date).strftime(DATETIME_FORMAT)
-    else:
-        date_match = re.match("(\d+)天前\s+发布于.*", value)
-        if date_match:
-            date = datetime.datetime.today() - datetime.timedelta(days=int(date_match.group(1)))
-            return parse(date).strftime(DATETIME_FORMAT)
-        else:
-            date_match = re.match("(\d{4}-\d{2}-\d{2})\s+发布于.*", value)
-            if date_match:
-                return parse(date_match.group(1)).strftime(DATETIME_FORMAT)
-            else:
-                return None
+def return_value(value):
+    return value
 
 
 def remove_comment_tag(value):
@@ -53,10 +29,6 @@ def remove_comment_tag(value):
         return ""
     else:
         return value
-
-
-def return_value(value):
-    return value
 
 
 def filter_group(value):
@@ -83,75 +55,38 @@ class MyItem(scrapy.Item):
 
 
 class JobboleArticleItem(MyItem):
+
     table_name = scrapy.Field()
     title = scrapy.Field()
-    front_image_url = scrapy.Field(
-        output_processor=MapCompose(return_value)
-    )
+    front_image_url = scrapy.Field(output_processor=MapCompose(return_value))
     front_image_path = scrapy.Field()
-    create_date = scrapy.Field(
-        input_processor=MapCompose(date_convert)
-    )
+    create_date = scrapy.Field(input_processor=MapCompose(date_convert))
     url = scrapy.Field()
     url_object_id = scrapy.Field()
-    praise_nums = scrapy.Field(
-        input_processor=MapCompose(get_number_value)
-    )
-    fav_nums = scrapy.Field(
-        input_processor=MapCompose(get_number_value)
-    )
-    comment_nums = scrapy.Field(
-        input_processor=MapCompose(get_number_value)
-    )
-    tag = scrapy.Field(
-        input_processor=MapCompose(remove_comment_tag),
-        output_processor=Join(" * ")
-    )
-    content = scrapy.Field()
+    praise_nums = scrapy.Field(input_processor=MapCompose(get_number_value))
+    fav_nums = scrapy.Field(input_processor=MapCompose(get_number_value))
+    comment_nums = scrapy.Field(input_processor=MapCompose(get_number_value))
+    tag = scrapy.Field(input_processor=MapCompose(remove_comment_tag), output_processor=Join(" * "))
+    content = scrapy.Field(input_processor=MapCompose(remove_tags))
 
 
 class ZhihuQuestionItem(MyItem):
-    table_name = scrapy.Field(
-        output_processor=TakeFirst()
-    )
-    zhihu_id = scrapy.Field(
-        output_processor=TakeFirst()
-    )    # 知乎id
-    # 主题
-    topics = scrapy.Field(
-        output_processor=Join(",")
-    )
-    url = scrapy.Field(
-        output_processor=TakeFirst()
-    )    # 问题url
-    title = scrapy.Field(
-        output_processor=TakeFirst()
-    )    # 标题
-    content = scrapy.Field(
-        output_processor=TakeFirst()
-    )    # 问题内容
+    table_name = scrapy.Field(output_processor=TakeFirst())
+    zhihu_id = scrapy.Field(output_processor=TakeFirst())    # 知乎id
+    topics = scrapy.Field(output_processor=Join(","))     # 主题
+    url = scrapy.Field(output_processor=TakeFirst())    # 问题url
+    title = scrapy.Field(output_processor=TakeFirst())    # 标题
+    content = scrapy.Field(output_processor=TakeFirst())    # 问题内容
     create_time = scrapy.Field()    # 创建时间
     update_time = scrapy.Field()    # 更新时间
     # 回答数
-    answer_num = scrapy.Field(
-        input_processor=MapCompose(get_number_value),
-        output_processor=TakeFirst()
-    )
+    answer_num = scrapy.Field(input_processor=MapCompose(get_number_value), output_processor=TakeFirst())
     # 评论数
-    comments_num = scrapy.Field(
-        input_processor=MapCompose(get_number_value),
-        output_processor=TakeFirst()
-    )
+    comments_num = scrapy.Field(input_processor=MapCompose(get_number_value), output_processor=TakeFirst())
     # 关注该问题人数
-    watch_user_num = scrapy.Field(
-        input_processor=MapCompose(get_number_value),
-        output_processor=TakeFirst()
-    )
+    watch_user_num = scrapy.Field(input_processor=MapCompose(get_number_value), output_processor=TakeFirst())
     # 点击数
-    click_num = scrapy.Field(
-        input_processor=MapCompose(get_number_value),
-        output_processor=TakeFirst()
-    )
+    click_num = scrapy.Field(input_processor=MapCompose(get_number_value), output_processor=TakeFirst())
     crawl_time = scrapy.Field()    # 爬取时间
     crawl_update_time = scrapy.Field()    # 爬取更新时间
 
@@ -171,6 +106,7 @@ class ZhihuAnswerItem(MyItem):
 
 
 class ProductKeywordItem(scrapy.Item):
+
     id = scrapy.Field()
     shop_url = scrapy.Field()
     product_url = scrapy.Field()
