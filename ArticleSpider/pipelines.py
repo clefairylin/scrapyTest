@@ -15,8 +15,12 @@ from twisted.enterprise import adbapi
 from pymysql import cursors
 from w3lib.html import remove_tags
 from scrapy.xlib.pydispatch import dispatcher
+from elasticsearch_dsl.connections import connections
 
 from ArticleSpider.models.es_types import ArticleType
+
+
+es = connections.create_connection(ArticleType._doc_type.using)
 
 
 class ArticlespiderPipeline(object):
@@ -132,6 +136,19 @@ class ArticleImagePipeline(ImagesPipeline):
 
 
 class ElasticSearchPipeline(object):
+    def get_suggest(self, index, info):
+        used_set, suggests = set(), []
+        for text, weight in info:
+            if text:
+                words = es.indices.analyze(index=index, params={"analyzer": "ik_max_word", "filter": ["lowercase"]},
+                                           body=text)
+                analyzed_words = set([r["token"] for r in words["tokens"] if len(r["token"]) > 1])
+                analyzed_words -= used_set
+            else:
+                analyzed_words = set()
+            if analyzed_words:
+                suggests.append({"input": list(analyzed_words), "weight": weight})
+        return suggests
 
     def process_item(self, item, spider):
         article = ArticleType()
@@ -147,5 +164,6 @@ class ElasticSearchPipeline(object):
         article.content = remove_tags(item["content"])
         article.meta.id = item["url_object_id"]
 
+        article.suggest = self.get_suggest(ArticleType._doc_type.index, ((article.title, 10), (article.tag, 7)))
         article.save()
         return item
